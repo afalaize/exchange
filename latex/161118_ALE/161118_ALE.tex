@@ -1,0 +1,368 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\author{Falaize}
+\title{Équation de la chaleur: \\ ALE, Éléments finis, POD et réduction de modèle}
+%
+\newcommand{\nnodes}{{n_{\labelname{nœuds}}}}
+\newcommand{\nx}{{n_{\labelname{X}}}}
+\newcommand{\nt}{{n_{\labelname t}}}
+\newcommand{\npod}{{n_{\labelname{POD}}}}
+\renewcommand{\nt}{{n_{\labelname T}}}
+\newcommand{\nc}{{n_{\labelname C}}}
+%
+\newcommand{\Dtens}{{\mathbf{D}}}
+%\newcommand{\Dtens}{{\overline{\overline{\overline{\mathbf{D}}}}}}
+
+\date{\today}
+%
+%
+%
+\input{../commandes}
+%
+%
+%
+\begin{document}
+\maketitle
+%
+%
+%
+\section{Description ALE}
+%
+Trois domaines ($\nc$ nombre de composantes):
+\begin{description}
+\item $\spacename{R}_{\vec x}\subset \RR^{\nc}$ Domaine spatial (espace vide immuable),
+\item $\spacename{R}_{\vec X}\subset \RR^{\nc}$ Domaine matériel (attaché à la matière),
+\item $\spacename{R}_{\vec \chi}\subset \RR^{\nc}$ Domaine de référence (arbitraire).
+\end{description}
+%
+Le temps est mesuré identiquement dans les trois domaine: $$t\in \spacename T \subseteq \RR$$.
+%
+Coordonnées spatiales du domaine matériel:
+$$ 
+\begin{array}{rrcl}
+\vec{\varphi}: & (\spacename{R}_{\vec X}, \spacename{T}) & \rightarrow & \left(\spacename{R}_{\vec x}, T\right) \\
+& (X, t) &  \mapsto & (x , t)
+\end{array}
+$$
+%
+On note $\vec{\varphi}(X, t) = \Big(\vec{\varphi}_{\vec x}(X, t), \vec{\varphi}_{t}(X, t) \Big)=(x , t)$ et
+%
+$$
+\nabla\vec \varphi
+=
+\left(
+\begin{array}{cc}
+\partial_{\vec X} \vec{\varphi}_{\vec x} & \vec{v}\\
+\zeros^\T & 1
+\end{array}
+\right)
+$$%
+%
+où on a définit $\vec{v} = \partial_{ t} \vec{\varphi}_{\vec x}  $
+%
+
+Coordonnées spatiales du domaine de référence:
+$$ 
+\begin{array}{rrcl}
+\vec{\phi}: & (\spacename{R}_{\vec \chi}, \spacename{T}) & \rightarrow & \left(\spacename{R}_{\vec x}, T\right) \\
+& (\chi, t) &  \mapsto & (x , t)
+\end{array}
+$$
+%
+On note $\vec{\phi}(\chi, t) = \Big(\vec{\phi}_{\vec x}(\chi, t), \vec{\phi}_{t}(\chi, t) \Big)=(x , t)$ et
+%
+$$
+\nabla\vec \phi
+=
+\left(
+\begin{array}{cc}
+\partial_{\vec \chi} \vec{\phi}_{\vec x} & \vec{v}^\star\\
+\zeros^\T & 1
+\end{array}
+\right)
+$$%
+%
+où on a définit $\vec{v}^\star = \partial_{ t} \vec{\phi}_{\vec x}  $
+%
+
+Coordonnées de référence du domaine matériel:
+$$ 
+\begin{array}{rrcl}
+\vec{\psi}^{-1}: & (\spacename{R}_{\vec X}, \spacename{T}) & \rightarrow & \left(\spacename{R}_{\vec \chi}, T\right) \\
+& (X, t) &  \mapsto & (\chi , t)
+\end{array}
+$$
+%
+On note $\vec{\psi}^{-1}(\chi, t) = \Big(\vec{\psi}^{-1}_{\vec \chi}(X, t), \vec{\psi}^{-1}_{t}(X, t) \Big)=(\chi , t)$ et
+%
+$$
+\nabla\vec {\psi}^{-1}
+=
+\left(
+\begin{array}{cc}
+\partial_{\vec \chi} \vec{\psi}^{-1}_{\vec x} & \vec{w}\\
+\zeros^\T & 1
+\end{array}
+\right)
+$$%
+%
+où on a définit $\vec{w} = \partial_{ t} \vec{\psi}^{-1}_{\vec \chi}  $.
+%
+%
+%
+
+On a donc $ \varphi  = \phi \circ \psi^{-1}$ et $\nabla \varphi = \nabla\phi \cdot \nabla \psi $, soit
+$$ 
+\left(
+\begin{array}{cc}
+\partial_{\vec X} \vec{\varphi}_{\vec x} & \vec{v}\\
+\zeros^\T & 1
+\end{array}
+\right)
+ = 
+ \left(
+\begin{array}{cc}
+\partial_{\vec \chi} \vec{\phi}_{\vec x} & \vec{v}^\star\\
+\zeros^\T & 1
+\end{array}
+\right)
+\cdot 
+\left(
+\begin{array}{cc}
+\partial_{\vec \chi} \vec{\psi}^{-1}_{\vec x} & \vec{w}\\
+\zeros^\T & 1
+\end{array}
+\right)$$
+%
+et $\vec{v} = \partial_{\vec \chi} \vec{\phi}_{\vec x} \cdot  \vec{w} + \vec{v}^\star.$
+%
+Finalement, on définit 
+$$ 
+\vec c = \vec v - \vec v ^\star = \partial_{\vec \chi} \vec{\phi}_{\vec x} \cdot  \vec{w} .
+$$
+%
+Soit une quantité $q_{\vec x}(x, t)$ mesurée dans le domaine spatial et la même quantité
+\begin{description}
+\item $q_{\vec X}(X, t)$ mesurée dans le domaine matériel, et
+\item  $q_{\vec \chi}(\chi, t)$ mesurée dans le domaine de référence.
+\end{description}
+%
+Alors $q_{\vec X} = q_{\vec x}\circ \vec{\varphi}$ et 
+$$ 
+\begin{array}{rcl}
+\nabla q_{\vec X} &=& \left( \partial _{X}q_{\vec X}, \partial_t q_{\vec X}\right) \\
+&=&\nabla q_{\vec x}\cdot \nabla \vec{\varphi}; \\
+ \partial _{X}q_{\vec X} &=&  \partial _{x}q_{\vec x}\cdot\partial _{X}\vec \varphi, \\
+ \partial _{t}q_{\vec X} &=&  \partial _{x}q_{\vec x}\cdot\vec{v}+\partial_t q_{\vec x}.
+\end{array}
+$$
+%
+De même $q_{\vec X} = q_{\vec \chi}\circ \vec{\psi}^{-1}$ et 
+$$ 
+\begin{array}{rcl}
+\nabla q_{\vec X} &=& \left( \partial _{X}q_{\vec X}, \partial_t q_{\vec X}\right) \\
+&=&\nabla q_{\vec \chi}\cdot \nabla \vec{\psi}^{-1}; \\
+ \partial _{X}q_{\vec X} &=&  \partial _{\chi}q_{\vec \chi}\cdot\partial _{X}  \vec{\psi}^{-1}, \\
+ \partial _{t}q_{\vec X} &=&  \partial _{\chi}q_{\vec \chi}\cdot\vec{w}+\partial_t q_{\vec \chi}.
+\end{array}
+$$
+%
+et pat définition:
+%
+$$
+\begin{array}{rcl}
+\partial _{t}q_{\vec X} &=& \partial_t q_{\vec \chi} +  \partial _{\chi}q_{\vec \chi}\cdot\vec{w} \\
+&=&\partial_t q_{\vec \chi} +  \partial _{x}q_{\vec x}\cdot\partial_{\vec \chi}\vec \phi_{\vec x}\cdot\vec{w} \\
+&=&\partial_t q_{\vec \chi} +  \partial _{x}q_{\vec x}\cdot\vec{c}
+\end{array}
+$$
+%
+\section{Formulation faible}
+%
+L'EDP:							
+\begin{equation}
+\label{eq:EDP}
+\left\{
+\begin{array}{rcll}
+\nthpartial{u}{t}{} - k\,\laplacien u & = & f,  & \forall x \in \overline{\Omega} = \Omega\cup\partial\Omega; \\
+u &=& u_0, & \forall x \in \Gamma_0 \subset \partial \Omega;\\
+\nthpartial{u}{\vec{n}}{} &=& g, & \forall x \in \Gamma_g = \partial \Omega\setminus\Gamma_0;\\
+u(x,t=0)&=&0,& \forall x \in \overline{\Omega}.
+\end{array}
+\right.
+\end{equation}
+							%
+avec $$u\in\spacename V \triangleq \left\{v\in\spacename{L}^2(\Omega);\, \nthpartial{v}{x}{}\in\spacename{L}^2(\Omega), \, v(x\in\Gamma_0)=u_0 \right\}.$$	
+
+N.B. Les conditions frontières essentielle (de type Dirichlet) sont incluses dans la définition de l'espace solution; Les conditions frontières naturelles (de type Neumann) sont à traiter séparément (\cf~formulation faible du problème ci-dessous).
+%
+On introduit les fonctions test $$v\in\hat{\spacename V}\triangleq\left\{v\in\spacename{L}^2(\Omega);\, \nthpartial{v}{x}{}\in\spacename{L}^2(\Omega), \, v(x\in\Gamma_0)=0 \right\};$$ \ie~ $\hat{\spacename V}$ est identique à $\spacename V$ partout sauf sur le bord $\partial\Omega$ où les fonctions test sont nulles.
+							%
+On écrit la formulation faible de (\ref{eq:EDP}):
+\begin{enumerate}
+\item Multiplication par un membre quelconque de $\hat{\spacename V}$ et intégration sur le domaine $\Omega$:
+ $$\int_\Omega\nthpartial{u}{t}{}\, v\,\d \Omega - \int_\Omega k\,\laplacien u\, v \d \Omega= \int_\Omega f\, v \d \Omega. $$
+ \item Intégration par partie, en exploitant la définition de l'espace des fonctions test: 
+ $$\int_\Omega\nthpartial{u}{t}{}\, v\,\d \Omega - \underbrace{\left[\nabla u\,k \,v \right]_{\partial\Omega}}_{=0} + \int_\Omega k\,\nabla u\, \nabla v \d \Omega= \int_\Omega f\, v \d \Omega. $$
+ \item Finalement
+ \begin{equation}
+ \label{eq:formulation_faible}
+\int_\Omega\nthpartial{u}{t}{}\, v\,\d \Omega + \int_\Omega k\,\nabla u\, \nabla v \d \Omega= \int_\Omega f\, v \d \Omega.
+ \end{equation}
+\end{enumerate}
+							%
+							%
+							%
+\section{Discrétisation}						
+							%
+On considère un sous espace discret de l'espace des fonctions solutions ($h$ réfère au pas de discrétisation spatiale):
+$$  \spacename V_h \subset \spacename V.$$
+%
+Une base de $\spacename V_h$ est $\{\phi_i\}_{1\leq i\leq \nnodes}$ (typiquement, les $\phi_i$ sont fournis par les fonctions de forme dans la méthode des éléments finis \cite[sec. 1.4]{ern2013theory} pour la résolution du problème variationnel (\ref{eq:formulation_faible})). 
+%
+Identiquement, une base de $\hat{\spacename V_h}$ est $\{\hat{N_i}\}_{1\leq i\leq \nnodes}$.
+							%
+							%
+							%
+On note $u_h \simeq u$ une solution approchée, que l'on décompose sur la base $\{\phi_i\}_{1\leq i\leq \nnodes}$ comme:
+$$u_h(x,t)\triangleq \alpha_i(t)\,\phi_i(x).$$
+							%
+Le problème variationnel s'écrit alors 
+							%
+							%
+							%
+$$
+\nthpartial{\alpha_i}{t}{}\,\int_\Omega \phi_i \, v\,\d \Omega + \alpha_i\,\int_\Omega k\,\nabla \phi_i\, \nabla v \d \Omega = \int_\Omega f\, v \d \Omega;\quad\forall v\in\hat{\spacename V}_h.
+$$
+							%
+							%
+Et en particulier pour $v=\hat{\phi}_j$:
+							%
+$$
+\nthpartial{\alpha_i}{t}{}\,\int_\Omega \phi_i \, \hat{\phi}_j\,\d \Omega + \alpha_i\,\int_\Omega k\,\nabla \phi_i\, \nabla \hat{\phi}_j \d \Omega = \int_\Omega f\, \hat{\phi}_j \d \Omega;\quad 1\leq j \leq \nnodes,
+$$
+							%
+soit 
+\begin{equation}
+\label{eq:Systeme_dynamique_discret}
+\mat{A}\cdot\nthpartial{\vec{\alpha}}{t}{} + \mat{B}\cdot\vec{\alpha} = \vec{f},
+\end{equation}
+%
+avec $A_{j,i} = \left( \phi_i \vert \hat{\phi}_j\right)$, $B_{j,i} = k\, \left( \nabla \phi_i \vert \nabla \hat{\phi}_j \right)$ et $f_j = \left( f \vert \nabla \hat{\phi}_j \right).$
+%
+\section{Base POD - Méthode "Snapshots"}
+%
+On dispose de $\nt$ mesures du champ de vitesse instantané $\{\bar u(x,t_k)\}_{1\leq k \leq \nt}$. On cherche une base orthonormale de $V$, de dimension finie, qui caractérise au mieux les $\nt$ clichés \textit{en moyenne} (ici temporelle) et \textit{au sens des moindres carrés}. C'est à dire que l'on cherche la séquence des $\{\varphi_i\}_{1\leq i \leq \npod}$ telle que 
+$$\frac{\langle \left( u \vert \varphi \right) \rangle}{ \left( \varphi \vert \varphi \right)} = \underset{\psi \in\spacename L ^2}{\operatorname{max}}\left( \frac{\langle \left( u \vert \psi \right) \rangle}{ \left( \psi \vert \psi \right)} \right),$$
+où l'opérateur de moyenne $\langle \cdot \rangle$ est à préciser et $(\cdot\vert \cdot)$ dénote le produit scalaire standard sur $\spacename L^2$.
+%
+On montre (\cf~\cite[sec. 4.1 et eq. (36)]{cordier2003proper}) que ce problème de maximisation est équivalent au problème au valeurs propres
+\begin{equation}
+\label{eq:probleme_aux_valeurs_propres}
+\int_\Omega\operatorname R(x, x^\prime)\,\varphi(x^\prime)\,\d x^\prime = \lambda\,\varphi(x),
+\end{equation}
+où $\operatorname R$ dénote l'opérateur de corrélation spatiale. Dans le cas de la POD par Snapshots, la moyenne correspond à la moyenne d'ensemble sur les $\nt$ clichés $\langle \alpha(x, t) \rangle \triangleq \frac{1}{\nt}\sum_{k=1}^{\nt}\alpha(x,t_k)$, et \textbf{sous les hypothèses de stationnarité et d'ergodicité}, on a~\cite[p. 32]{cordier2003proper}:
+\begin{equation}
+R(x, x^\prime) = \frac{1}{\nt}\,\sum_{i=1}^{\nt} u(x,t_i)\otimes u^*(x^\prime,t_i)
+\end{equation}
+%
+On fait alors l'hypothèse que les $\varphi_i$ s'écrivent comme combinaison linéaire des $\nt$ clichés de la solution:\begin{equation}
+\label{eq:ersatz_base_pod}
+\varphi_j = \gamma_{j,k}\,\bar{u}(x, t_k).
+\end{equation}
+%
+En injectant l'ersatz (\ref{eq:ersatz_base_pod}) dans le problème aux valeurs propres (\ref{eq:probleme_aux_valeurs_propres}), on obtient~\cite[eq. (37)]{cordier2003proper}:
+\begin{equation}
+\label{eq:probleme_aux_valeurs_propres_sur_les_gammas_ij}
+\frac{1}{\nt}\,\sum_{k=1}^{\nt}\big(u(x^\prime,t_k) \vert u(x^\prime,t_i)\big)\gamma_{j,k} = \lambda_j\,\gamma_{j,i},\quad 1\leq i \leq \nt,
+\end{equation}
+\ie
+\begin{equation}
+\mat{C}\,\gamma_j = \lambda_j\,\gamma_j,
+\end{equation}
+où $\gamma_j = (\gamma_{j,1},\cdots,\gamma_{j,\nt})^\T$ et 
+$$ 
+\begin{array}{rcl}
+C_{k,i} & = & \frac{1}{\nt}\,\int_\Omega u^*(x, t_k) \, u(x, t_i)\,\d \Omega \\
+& \simeq & \frac{1}{\nt}\,\sum_{n=1}^{\nnodes} u^*(x_n, t_k) \, u(x_n, t_i).
+\end{array}
+$$
+\section{Modèle réduit}
+%
+\subsection{Structure de données}
+%
+On dispose d'une matrice $\widetilde{\mat{D}}$ représentant des données simulées:
+\begin{equation}
+\widetilde{\mat{D}} = \left( 
+\begin{array}{ccc}
+\vec{u}(\vec{x}_1; t_1)& \cdots & \vec{u}(\vec{x}_1; t_\nt) \\
+\vdots & & \vdots\\
+\vec{u}(\vec{x}_\nx; t_1)& \cdots & \vec{u}(\vec{x}_\nx; t_\nt) \\
+\end{array}
+\right) \in \RR^{\nx \times \nt}
+\end{equation}
+avec 
+\begin{itemize}
+\item la séquence de points du domaine spatial $(\vec x_i)_{1\leq i \leq \nx}$, $\vec x _i \in \Omega$,
+\item la séquence ordonnée d'instants $(t_j)_{1\leq j \leq  \nt }$, $t_j\in \spacename T$, $t_j< t_{j+1}$.
+\end{itemize}
+%
+Le problème est de restructurer ces données afin de définir des équivalents discrets aux opérateurs \emph{produit scalaire} et \emph{gradients}.
+%
+On choisit de représenter ces données par un tenseur $\Dtens$ d'ordre $\nc$ exprimé en coordonnées sur une base $\{\vec{e}_c\}_{1\leq c\leq \nc}$ avec $\nc$ le nombre de composantes spatiales.
+%
+On associe au domaine $\Omega\subset\RR^{\nc}$ le plus petit domaine parallélépipédique $\overline{\Omega} = \left\{\vec x \in \prod_{c=1}^\nc [x^{\labelname{min}}_c,\, x^{\labelname{max}}_c] \subseteq \RR^{\nc} \right\}$ qui contient $\Omega$.
+
+\subsection{Opérateurs discrets}
+%
+On cherche à définir les opérateurs gradient, et produit scalaire nécessaires à la formulation du modèle réduit.
+%
+\paragraph{Gradient discret}
+%
+Par définition du gradient
+
+
+
+
+\subsection{Projection sur la base POD}
+
+On suppose les $\{\phi_i\}_{1\leq i \leq N_{\labelname{POD}}}$ orthonormés\footnote{Si la base n'est que orthogonale, on normalise chaque élément: $\phi_i\leftarrow (\phi_i \vert \phi_i)^{-1}\,\phi_i$; $1\leq i\leq N_{\labelname{POD}}$.}.
+%
+Dans toute la suite, le produit scalaire considéré correspond au produit scalaire discret:
+%
+\begin{equation}
+\label{eq:produit_scalaire_discret}
+\left.
+\begin{array}{l}
+\vec{u} = (u_i)_{1 \leq i \leq \nnodes}\\
+\vec{v} = (v_j)_{1 \leq j \leq \nnodes}
+\end{array}
+\right\}
+\rightarrow
+(\vec u \vert \vec v) \triangleq u_i\,v_i.
+\end{equation}
+%
+%
+\subsection{formulation faible sur la base POD}
+On réécrit le problème (\ref{eq:EDP}) pour la solution approchée sur la base POD $\{\varphi_j(x)\}_{1\leq j \leq N_{\labelname{POD}}\leq N_{\labelname{t}}}$:
+$$\tilde u(x,t) = \beta_j(t)\,\varphi_j(x), $$
+c'est à dire
+ $$\nthpartial{\beta_j}{t}{} \underbrace{\int_\Omega\varphi_j\, \varphi_i\,\d \Omega}_{\overline{A}_{i,j}} -\beta_j\, \underbrace{\left[k \,\nabla \varphi_j\,\varphi_i \right]_{\partial\Omega}}_{\overline{C}_{i,j}} + \beta_j\,\underbrace{\int_\Omega k\,\nabla  \varphi_j\, \nabla \varphi_i \d \Omega}_{\overline{B}_{i,j}}= \underbrace{\int_\Omega f\, \varphi_i \d \Omega}_{\overline{f}_i},\quad 1\leq i \leq N_{\labelname{POD}}, $$
+ou encore, avec $\beta=(\beta_j)_{1\leq j\leq N_{\labelname{POD}}}$:
+$$\overline{\mat A}\,\nthpartial{\beta}{t}{} + (\overline{\mat B}-\overline{\mat C})\,\beta = \vec{\overline{f}}.$$
+%===============================================================
+%===============================================================
+							%
+\bibliographystyle{plain}
+\bibliography{/home/afalaize/Documents/BIBLIO/JabRefDataBase}
+							%
+%===============================================================
+%===============================================================
+							%
+							%
+							%
+\end{document}

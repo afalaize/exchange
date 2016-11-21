@@ -1,0 +1,40 @@
+% Bold symbols
+\DeclareSymbolFont{bbold}{U}{bbold}{m}{n}
+\DeclareSymbolFontAlphabet{\mathbbold}{bbold}
+
+\newcommand{\zeros}{\mathbbold{0}}
+
+\newcommand{\spacename}[1]{#1}
+\newcommand{\labelname}[1]{\mathrm{#1}}
+
+\newcommand{\prodscal}[2]{(#1 \vert #2)}
+\newcommand{\module}[1]{\vert #1 \vert}
+\newcommand{\norme}[1]{\parallel #1 \parallel}
+
+\newcommand{\nthpartial}[3]{\frac{\partial^{#3} #1}{\partial #2^{#3}}}
+\renewcommand{\div}{\operatorname{div}}
+\newcommand{\grad}{\operatorname{grad}}
+\newcommand{\laplacien}{\Delta}
+\newcommand{\totalder}[2]{\frac{\D #1}{\D #2}}
+
+\renewcommand{\d}{\operatorname{d}}
+\newcommand{\D}{\operatorname{D}}
+
+\newcommand{\T}{\intercal}
+
+\newcommand{\operatorL}{\operatorname{L}}
+
+\newcommand{\NRJ}{E}
+\newcommand{\NRJspe}{E_{\labelname{spe}}}
+\newcommand{\NRJint}{E_{\labelname{int}}}
+
+\renewcommand{\vec}[1]{\boldsymbol{#1}}
+\newcommand{\mat}[1]{\mathbf{#1}}
+
+\newcommand{\RR}{{\mathbb{R}}}
+\newcommand{\CC}{{\mathbb{C}}}
+
+\newcommand{\cf}{\textit{c.f.}}
+\newcommand{\ie}{\textit{i.e.}}
+\newcommand{\Cf}{\textit{C.f.}}
+\newcommand{\Ie}{\textit{I.e.}}
